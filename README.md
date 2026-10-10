@@ -83,6 +83,7 @@ GF_SECURITY_ADMIN_PASSWORD=CHANGE_TO_A_STRONG_GRAFANA_PASSWORD
 ### 6.1. Khởi chạy ứng dụng và cơ sở dữ liệu
 
 ```bash
+cd ~/booking-tour
 docker compose config -q
 docker compose up -d --build
 ```

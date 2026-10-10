@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Tour - Khám phá Việt Nam</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; color: #183047; background: #f4f8fb; }
+    header { background: #087e8b; color: white; padding: 20px 7%; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 25px; }
+    nav a { color: white; text-decoration: none; margin-left: 20px; }
+    .hero { padding: 65px 7%; color: white; background: linear-gradient(120deg, #087e8b, #20a4a8); }
+    .hero h2 { font-size: 38px; margin: 0 0 12px; }
+    .hero p { font-size: 18px; }
+    main { padding: 35px 7%; }
+    .tour-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 22px; }
+    .tour { background: white; border-radius: 12px; padding: 22px; box-shadow: 0 4px 14px #16324f12; }
+    .tour .emoji { font-size: 42px; }
+    .tour h3 { margin-bottom: 8px; }
+    .price { color: #087e8b; font-weight: bold; font-size: 19px; }
+    button { background: #087e8b; color: white; border: 0; border-radius: 7px; padding: 11px 16px; cursor: pointer; }
+    button:hover { background: #05636d; }
+    footer { text-align: center; padding: 22px; background: #183047; color: white; }
+    #status { margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>✈ Booking Tour</h1>
+    <nav><a href="#tours">Danh sách tour</a><a href="#contact">Liên hệ</a></nav>
+  </header>
+  <section class="hero">
+    <h2>Khám phá Việt Nam</h2>
+    <p>Hành trình tuyệt vời, trải nghiệm đáng nhớ.</p>
+    <a href="#tours"><button>Khám phá tour ngay</button></a>
+  </section>
+  <main id="tours">
+    <h2>Tour du lịch nổi bật</h2>
+    <p id="status">Đang tải danh sách tour...</p>
+    <div class="tour-list" id="tourList"></div>
+  </main>
+  <footer id="contact">Booking Tour System · Website đặt tour du lịch</footer>
+  <script>
+    async function loadTours() {
+      const status = document.getElementById('status');
+      try {
+        const response = await fetch('/api/tours');
+        if (!response.ok) throw new Error('Không tải được dữ liệu tour');
+        const tours = await response.json();
+        document.getElementById('tourList').innerHTML = tours.map(tour => `
+          <article class="tour">
+            <div class="emoji">${tour.image}</div>
+            <h3>${tour.name}</h3>
+            <p>${tour.description}</p>
+            <p>Thời gian: ${tour.duration}</p>
+            <p class="price">${Number(tour.price).toLocaleString('vi-VN')} VNĐ</p>
+            <button onclick="bookTour(${tour.id}, '${tour.name.replace(/'/g, "\\'")}')">Đặt tour</button>
+          </article>`).join('');
+        status.textContent = tours.length ? '' : 'Hiện chưa có tour.';
+      } catch (error) {
+        status.textContent = 'Không tải được tour. Vui lòng thử lại sau.';
+      }
+    }
+    async function bookTour(id, name) {
+      const customer = prompt('Nhập họ tên của bạn:');
+      if (!customer) return;
+      const phone = prompt('Nhập số điện thoại:');
+      if (!phone) return;
+      const people = Number(prompt('Số người tham gia:', '1'));
+      if (!Number.isInteger(people) || people < 1) {
+        alert('Số người không hợp lệ.');
+        return;
+      }
+      try {
+        const response = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tourId: id, customer, phone, people })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Đặt tour thất bại');
+        alert('Đặt tour thành công! Mã đơn: ' + result.id);
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+    loadTours();
+  </script>
+</body>
+</html>

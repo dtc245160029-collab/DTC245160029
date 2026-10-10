@@ -1,0 +1,95 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: booking_tour_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    networks:
+      - monitoring_net
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: booking_tour_loki
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/loki/local-config.yaml"
+    volumes:
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - monitoring_net
+
+  promtail:
+    image: grafana/promtail:3.5.0
+    container_name: booking_tour_promtail
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/promtail/config.yaml"
+    volumes:
+      - ./monitoring/promtail-config.yaml:/etc/promtail/config.yaml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - promtail_positions:/tmp
+    depends_on:
+      - loki
+    networks:
+      - monitoring_net
+  grafana:
+    image: grafana/grafana:latest
+    container_name: booking_tour_grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ChangeMe_Grafana_2026
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring_net
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: booking_tour_node_exporter
+    restart: unless-stopped
+    command:
+      - "--path.rootfs=/host"
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - monitoring_net
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: booking_tour_cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    ports:
+      - "127.0.0.1:8088:8080"
+    networks:
+      - monitoring_net
+
+networks:
+  monitoring_net:
+    name: booking_tour_monitoring_net
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  promtail_positions:

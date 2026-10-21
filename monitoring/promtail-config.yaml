@@ -20,3 +20,11 @@ scrape_configs:
 
     pipeline_stages:
       - docker: {}
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          project: booking-tour
+          __path__: /var/log/nginx/*.log

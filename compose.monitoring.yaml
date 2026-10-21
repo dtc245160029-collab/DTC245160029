@@ -32,6 +32,7 @@ services:
     command:
       - "-config.file=/etc/promtail/config.yaml"
     volumes:
+      - /var/log/nginx:/var/log/nginx:ro
       - ./monitoring/promtail-config.yaml:/etc/promtail/config.yaml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - promtail_positions:/tmp
